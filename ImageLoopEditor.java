@@ -18,24 +18,25 @@ import javax.print.attribute.standard.PrinterMessageFromOperator;
 ///////////////////////////////////////////////////////////////////////////////
 
 public class ImageLoopEditor {
-	// Used to read in user input
-	private static Scanner stdin;
 	
 	public static void main(String[] args) {
 		// Stores a flag used to terminate the program once finished
 		boolean done = false;
-		
-		stdin = new Scanner(System.in);
+		// Used to read in user input
+		Scanner stdin = new Scanner(System.in);
+		// Stores the images in a loop structure 
+		LinkedLoop<Image> imageLoop = new LinkedLoop<Image>();
 		// Main loop for user input
-		while (!done) { done = userInput(); }
+		while (!done) { 
+			System.out.print("enter command (? for help)>");
+			done = userInput(stdin.nextLine());
+		}
 		stdin.close();
 	}
 	
-	private static boolean userInput() {
+	private static boolean userInput(String input) {
 		boolean shouldQuit = false;
 		
-		System.out.print("enter command (? for help)>");
-		String input = stdin.nextLine();
 		char command = input.charAt(0);
 		String argument = "";
 		if (input.length() > 1) { argument = input.substring(1).trim(); }
