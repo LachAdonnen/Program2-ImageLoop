@@ -1,10 +1,8 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Iterator;
 import java.util.Scanner;
-
-import javax.print.attribute.standard.PrinterMessageFromOperator;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Title:            Prog2-ImageLoop
@@ -18,6 +16,7 @@ import javax.print.attribute.standard.PrinterMessageFromOperator;
 ///////////////////////////////////////////////////////////////////////////////
 
 public class ImageLoopEditor {
+	private static LinkedLoop<Image> imageLoop;
 	
 	public static void main(String[] args) {
 		// Stores a flag used to terminate the program once finished
@@ -25,7 +24,7 @@ public class ImageLoopEditor {
 		// Used to read in user input
 		Scanner stdin = new Scanner(System.in);
 		// Stores the images in a loop structure 
-		LinkedLoop<Image> imageLoop = new LinkedLoop<Image>();
+		imageLoop = new LinkedLoop<Image>();
 		// Main loop for user input
 		while (!done) { 
 			System.out.print("enter command (? for help)>");
@@ -98,6 +97,12 @@ public class ImageLoopEditor {
 		catch (IllegalArgumentException e) { 
 			System.out.println("invalid command");
 		}
+		catch (EmptyLoopException e) {
+			System.out.println("no images");
+		}
+		catch (ImageFileNotFoundException e) {
+			System.out.println(e.getMessage());
+		}
 		return shouldQuit;
 	}
 	
@@ -110,6 +115,7 @@ public class ImageLoopEditor {
 		return;
 	}
 	
+	// s filename
 	private static void optionSaveLoop(String fileName) {
 		validateFilename(fileName);
 		
@@ -122,7 +128,15 @@ public class ImageLoopEditor {
 						"will be overwritten");
 			}
 			fileWriter = new PrintStream(fileOut);
-			//TODO Write the current loop to the file
+
+			Iterator<Image> imageIter = imageLoop.iterator();
+			while (imageIter.hasNext()) {
+				Image imageToWrite = imageIter.next();
+				String fileLine = imageToWrite.getFile() + " " +
+						imageToWrite.getDuration() + " \"" +
+						imageToWrite.getTitle() + "\"";
+				fileWriter.println(fileLine);
+			}
 		}
 		catch (IOException e) {
 			System.out.println("unable to save");
@@ -133,6 +147,7 @@ public class ImageLoopEditor {
 		return;
 	}
 	
+	// l filename
 	private static void optionLoadLoop(String fileName) {
 		validateFilename(fileName);
 		
@@ -141,56 +156,192 @@ public class ImageLoopEditor {
 		try {
 			File fileIn = new File(fileName);
 			fileReader = new Scanner(fileIn);
-			//TODO Read the contents of the file into a loop
+			int numImagesLoaded = 0;
+			
+			while (fileReader.hasNextLine()) {
+				String fileLine = fileReader.nextLine();
+				Scanner lineReader = new Scanner(fileLine);
+				try {
+					String imageFileName = lineReader.next();
+					validateImageFileExists(imageFileName);
+					int imageDuration = lineReader.nextInt();
+					String imageTitle = removeStringQuotes(
+							lineReader.nextLine());
+					imageLoopAddAfter(new Image(imageFileName, imageTitle,
+							imageDuration));
+					numImagesLoaded++;
+				}
+				catch (ImageFileNotFoundException e) {
+						System.out.println(e.getMessage());
+				}
+				finally { lineReader.close(); }
+			}
+			// Jump to the first image that was loaded
+			for (int i = numImagesLoaded; i > 1; i--) { imageLoop.previous(); }
 		}
 		catch (IOException e) {
 			System.out.println("unable to load");
+			// If the load fails, clear out any leftover data
+			imageLoop = new LinkedLoop<Image>();
 		}
 		finally {
 			if (fileReader != null) { fileReader.close(); }
 		}
+		return;
 	}
 
-	private static void optionPrintImageList() {}
+	// d
+	private static void optionPrintImageList() {
+		Iterator<Image> imageIter = imageLoop.iterator();
+		while (imageIter.hasNext()) {
+			Image imageToWrite = imageIter.next();
+			System.out.println(generateImageString(imageToWrite));
+		}
+		return;
+	}
 	
-	private static void optionDisplayImage() {}
+	// p
+	private static void optionDisplayImage() throws EmptyLoopException {
+		validateImageLoopNotEmpty();
+		try {
+			imageLoop.getCurrent().displayImage();
+		}
+		// If interrupted, just carry on
+		catch (InterruptedException e) {}
+		return;
+	}
 	
-	private static void optionTestImageLoop() {}
+	// t
+	private static void optionTestImageLoop() {
+		Iterator<Image> imageIter = imageLoop.iterator();
+		while (imageIter.hasNext()) {
+			try {
+				Image imageToDisplay = imageIter.next();
+				imageToDisplay.displayImage();
+			}
+			// If interrupted, move on to next image
+			catch (InterruptedException e) {}
+		}
+		return;
+	}
 	
-	private static void optionMoveForward() {}
+	// f
+	private static void optionMoveForward() throws EmptyLoopException {
+		validateImageLoopNotEmpty();
+		imageLoop.next();
+		displayImageContext();
+		return;
+	}
 	
-	private static void optionMoveBackward() {}
+	// b
+	private static void optionMoveBackward() throws EmptyLoopException {
+		validateImageLoopNotEmpty();
+		imageLoop.previous();
+		displayImageContext();
+		return;
+	}
 	
-	private static void optionJumpForward(int numToJump) {
+	// j numToJump
+	private static void optionJumpForward(int numToJump)
+			throws EmptyLoopException {
 		validatePositiveInt(numToJump);
-		//TODO Jump through the list
+		validateImageLoopNotEmpty();
+		for (int i = 1; i <= numToJump; i++) { imageLoop.next(); }
+		displayImageContext();
+		return;
 	}
 	
-	private static void optionRemoveImage() {}
+	// r
+	private static void optionRemoveImage() throws EmptyLoopException {
+		imageLoop.removeCurrent();
+		displayImageContext();
+		return;
+	}
 	
-	private static void optionAddImageAfter(String fileName) {
+	// a filename
+	// Should never throw EmptyLoopException since we will only attempt to
+	// display the context if we successfully added a new node
+	private static void optionAddImageAfter(String fileName)
+			throws ImageFileNotFoundException, EmptyLoopException {
 		validateFilename(fileName);
+		validateImageFileExists(fileName);
+		imageLoopAddAfter(new Image(fileName));
+		displayImageContext();
+		return;
 	}
 	
-	private static void optionAddImageBefore(String fileName) {
+	private static void imageLoopAddAfter(Image newImage) {
+		imageLoop.next();
+		imageLoop.add(newImage);
+		return;
+	}
+
+	// i filename
+	// Should never throw EmptyLoopException since we will only attempt to
+	// display the context if we successfully added a new node
+	private static void optionAddImageBefore(String fileName) 
+			throws ImageFileNotFoundException, EmptyLoopException {
 		validateFilename(fileName);
+		validateImageFileExists(fileName);
+		imageLoop.add(new Image(fileName));
+		displayImageContext();
+		return;
 	}
-	
-	//TODO Should likely have a more generic "AddImage" method that is called
-	// from both the after and before code paths. This tag should call
-	// validateImageFileExists and handle the exception.
-	
+		
+	// c searchStr
 	private static void optionSearchImageTitle(String searchStr) {
 		searchStr = removeStringQuotes(searchStr);
+		return;
 	}
 	
-	private static void optionUpdateDuration(int time) {
+	// u time
+	private static void optionUpdateDuration(int time) 
+			throws EmptyLoopException {
 		validatePositiveInt(time);
-		//TODO Update image object duration
+		imageLoop.getCurrent().setDuration(time);
+		return;
 	}
 	
-	private static void optionEditTitle(String newTitle) {
+	// e title
+	private static void optionEditTitle(String newTitle)
+			throws EmptyLoopException {
 		newTitle = removeStringQuotes(newTitle);
+		imageLoop.getCurrent().setTitle(newTitle);
+		return;
+	}
+	
+	private static void displayImageContext() throws EmptyLoopException {
+		int loopSize = imageLoop.size();
+		
+		// Print previous image
+		if (loopSize > 2) {
+			imageLoop.previous();
+			System.out.println("    " + generateImageString(
+					imageLoop.getCurrent()));
+			imageLoop.next();
+		}
+		
+		// Print current image
+		System.out.println("--> " + generateImageString(
+				imageLoop.getCurrent()) + " <--");
+		
+		// Print next image
+		if (loopSize > 1) {
+			imageLoop.next();
+			System.out.println("    " + generateImageString(
+					imageLoop.getCurrent()));
+		}
+		return;
+	}
+	
+	private static String generateImageString(Image imageToWrite) {
+		String returnString = "";
+		if (imageToWrite != null) {
+			returnString += imageToWrite.getTitle() + " [";
+			returnString += imageToWrite.getFile() + ", ";
+			returnString += imageToWrite.getDuration() + "]";
+		}
+		return returnString;
 	}
 	
 	private static String removeStringQuotes(String argument) {
@@ -220,9 +371,18 @@ public class ImageLoopEditor {
 		if (numToCheck < 0) { throw new IllegalArgumentException(); }
 	}
 
-	private static void validateImageFileExists(String fileName) 
-			throws FileNotFoundException {
-		File imageFile = new File(fileName);
-		if (!imageFile.exists()) { throw new FileNotFoundException(); }
+	private static void validateImageLoopNotEmpty() throws EmptyLoopException {
+		if (imageLoop.isEmpty()) { throw new EmptyLoopException(); }
+		return;
+	}
+	
+	private static void validateImageFileExists(String fileName)
+			throws ImageFileNotFoundException {
+		File testFile = new File("images\\" + fileName);
+		if (!testFile.exists()) {
+			String errMsg = "warning: " + fileName + " is not in images folder";
+			throw new ImageFileNotFoundException(errMsg);
+		}
+		return;
 	}
 }

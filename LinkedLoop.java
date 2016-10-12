@@ -2,7 +2,7 @@ import java.util.Iterator;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Title:            Prog2-ImageLoop
-// Files:            ImageLoopEditor.java
+// Files:            LinkedLoop.java
 // Semester:         Fall 2016
 //
 // Author:           Alex McClain, gamcclain@wisc.edu
@@ -80,6 +80,7 @@ public class LinkedLoop<E> implements LoopADT<E> {
 			
 			prevNode.setNext(nextNode);
 			nextNode.setPrev(prevNode);
+			currentNode = nextNode;
 			numNodes--;
 			return removedNode.getData();
 		}

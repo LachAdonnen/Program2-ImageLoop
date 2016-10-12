@@ -2,7 +2,7 @@ import java.util.Iterator;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Title:            Prog2-ImageLoop
-// Files:            ImageLoopEditor.java
+// Files:            LinkedLoopIterator.java
 // Semester:         Fall 2016
 //
 // Author:           Alex McClain, gamcclain@wisc.edu
@@ -34,7 +34,10 @@ public class LinkedLoopIterator<E> implements Iterator<E> {
 	}
 
 	@Override
-	public E next() { return currentNode.getNext().getData(); }
+	public E next() { 
+		currentNode = currentNode.getNext();
+		return currentNode.getData();
+	}
 	
 	@Override
 	public void remove() { throw new UnsupportedOperationException(); }

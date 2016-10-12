@@ -1,6 +1,8 @@
+import java.io.FileNotFoundException;
+
 ///////////////////////////////////////////////////////////////////////////////
 // Title:            Prog2-ImageLoop
-// Files:            EmptyLoopException.java
+// Files:            ImageFileNotFoundException.java
 // Semester:         Fall 2016
 //
 // Author:           Alex McClain, gamcclain@wisc.edu
@@ -9,4 +11,7 @@
 // Lab Section:      LAB ###
 ///////////////////////////////////////////////////////////////////////////////
 
-public class EmptyLoopException extends Exception {}
+public class ImageFileNotFoundException extends FileNotFoundException {
+
+	public ImageFileNotFoundException(String errMsg) { super(errMsg); }
+}
