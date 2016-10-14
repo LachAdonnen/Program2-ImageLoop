@@ -89,4 +89,63 @@ public class LinkedLoop<E> implements LoopADT<E> {
 	@Override
 	public int size() { return numNodes; }
 	
+	public void swap(int pos1, int pos2) {
+		// Verify that we need to take some action
+		if (pos1 == pos2) { return; }
+		if (numNodes < 2) { return; }
+		if (pos1 < 0 || pos2 < 0) { return; }
+		if (pos1 >= numNodes || pos2 >= numNodes) { return; }
+		
+		// Determine the order of the two positions
+		int min = pos1, max = pos2;
+		if (pos2 < pos1) {
+			min = pos2;
+			max = pos1;
+		}
+		
+		// Traverse the list to find the two target nodes
+		DblListnode<E> minNode = null;
+		DblListnode<E> maxNode = null;
+		DblListnode<E> iteratorNode = currentNode;
+		for (int i = 0; i <= max; i++) {
+			if (i == min) { minNode = iteratorNode; }
+			if (i == max) { maxNode = iteratorNode; }
+			iteratorNode = iteratorNode.getNext();
+		}
+		
+		// The minNode is guaranteed to have a next since the list has at least 3 items
+		DblListnode<E> minNextNode = minNode.getNext();
+		// The maxNode is guaranteed to have a previous node since the list has at least 3 items
+		DblListnode<E> maxPrevNode = maxNode.getPrev();
+
+		DblListnode<E> minPrevNode;
+		if (min > 0) { // Not switching the first node, so just grab the existing previous node
+			minPrevNode = minNode.getPrev();
+			maxNode.setPrev(minPrevNode);
+			minPrevNode.setNext(maxNode);
+		}
+		else { // Switching the first element, so place the maxNode after the header node
+			maxNode.setPrev(null);
+		}
+
+		DblListnode<E> maxNextNode;
+		if (max < numNodes - 1) { // Not switching the last node, so just grab the existing next node
+			maxNextNode = maxNode.getNext();
+			minNode.setNext(maxNextNode);
+			maxNextNode.setPrev(minNode);
+		}
+		else { minNode.setNext(null); } // Switching the last node, so there will be no next
+
+		if (minNextNode == maxNode) { // Switching adjacent nodes, so reverse the previous/next pointers
+			maxNode.setNext(minNode);
+			minNode.setPrev(maxNode);
+		}
+		else { // There are nodes in between, so use the switch previous/next pointers
+			maxNode.setNext(minNextNode);
+			minNextNode.setPrev(maxNode);
+			minNode.setPrev(maxPrevNode);
+			maxPrevNode.setNext(minNode);
+		}
+	}
+	
 }

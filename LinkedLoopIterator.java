@@ -17,7 +17,6 @@ public class LinkedLoopIterator<E> implements Iterator<E> {
 	private DblListnode<E> initialNode;
 	
 	protected LinkedLoopIterator(DblListnode<E> startNode) {
-		initialNode = startNode;
 		currentNode = startNode;
 	}
 
@@ -30,13 +29,15 @@ public class LinkedLoopIterator<E> implements Iterator<E> {
 	@Override
 	public boolean hasNext() {
 		if (currentNode == null) { return false; }
-		return currentNode.getNext() == initialNode;
+		return currentNode != initialNode;
 	}
 
 	@Override
 	public E next() { 
+		if (initialNode == null) { initialNode = currentNode; }
+		DblListnode<E> nodeToReturn = currentNode;
 		currentNode = currentNode.getNext();
-		return currentNode.getData();
+		return nodeToReturn.getData();
 	}
 	
 	@Override

@@ -25,6 +25,7 @@ public class ImageLoopEditor {
 		Scanner stdin = new Scanner(System.in);
 		// Stores the images in a loop structure 
 		imageLoop = new LinkedLoop<Image>();
+		
 		// Main loop for user input
 		while (!done) { 
 			System.out.print("enter command (? for help)>");
@@ -36,7 +37,8 @@ public class ImageLoopEditor {
 	private static boolean userInput(String input) {
 		boolean shouldQuit = false;
 		
-		char command = input.charAt(0);
+		char command = ' ';
+		if (input.length() > 0) { command = input.charAt(0); }
 		String argument = "";
 		if (input.length() > 1) { argument = input.substring(1).trim(); }
 		
@@ -117,11 +119,11 @@ public class ImageLoopEditor {
 	
 	// s filename
 	private static void optionSaveLoop(String fileName) {
-		validateFilename(fileName);
-		
 		// Attempt to open the file for writing
 		PrintStream fileWriter = null;
 		try {
+			fileName = validateFilename(fileName);
+			validateImageLoopNotEmpty();
 			File fileOut = new File(fileName);
 			if (fileOut.exists()) {
 				System.out.println("warning: file already exists, " +
@@ -138,6 +140,9 @@ public class ImageLoopEditor {
 				fileWriter.println(fileLine);
 			}
 		}
+		catch (EmptyLoopException e) {
+			System.out.println("no images to save");
+		}
 		catch (IOException e) {
 			System.out.println("unable to save");
 		}
@@ -149,7 +154,7 @@ public class ImageLoopEditor {
 	
 	// l filename
 	private static void optionLoadLoop(String fileName) {
-		validateFilename(fileName);
+		fileName = validateFilename(fileName);
 		
 		// Attempt to open the file for reading
 		Scanner fileReader = null;
@@ -165,8 +170,11 @@ public class ImageLoopEditor {
 					String imageFileName = lineReader.next();
 					validateImageFileExists(imageFileName);
 					int imageDuration = lineReader.nextInt();
-					String imageTitle = removeStringQuotes(
-							lineReader.nextLine());
+					String imageTitle = "";
+					if (lineReader.hasNextLine()) {
+							imageTitle = removeStringQuotes(
+							lineReader.nextLine().trim());
+					}
 					imageLoopAddAfter(new Image(imageFileName, imageTitle,
 							imageDuration));
 					numImagesLoaded++;
@@ -191,7 +199,8 @@ public class ImageLoopEditor {
 	}
 
 	// d
-	private static void optionPrintImageList() {
+	private static void optionPrintImageList() throws EmptyLoopException {
+		validateImageLoopNotEmpty();
 		Iterator<Image> imageIter = imageLoop.iterator();
 		while (imageIter.hasNext()) {
 			Image imageToWrite = imageIter.next();
@@ -212,7 +221,8 @@ public class ImageLoopEditor {
 	}
 	
 	// t
-	private static void optionTestImageLoop() {
+	private static void optionTestImageLoop() throws EmptyLoopException {
+		validateImageLoopNotEmpty();
 		Iterator<Image> imageIter = imageLoop.iterator();
 		while (imageIter.hasNext()) {
 			try {
@@ -259,11 +269,9 @@ public class ImageLoopEditor {
 	}
 	
 	// a filename
-	// Should never throw EmptyLoopException since we will only attempt to
-	// display the context if we successfully added a new node
 	private static void optionAddImageAfter(String fileName)
-			throws ImageFileNotFoundException, EmptyLoopException {
-		validateFilename(fileName);
+			throws ImageFileNotFoundException {
+		fileName = validateFilename(fileName);
 		validateImageFileExists(fileName);
 		imageLoopAddAfter(new Image(fileName));
 		displayImageContext();
@@ -277,11 +285,9 @@ public class ImageLoopEditor {
 	}
 
 	// i filename
-	// Should never throw EmptyLoopException since we will only attempt to
-	// display the context if we successfully added a new node
 	private static void optionAddImageBefore(String fileName) 
-			throws ImageFileNotFoundException, EmptyLoopException {
-		validateFilename(fileName);
+			throws ImageFileNotFoundException {
+		fileName = validateFilename(fileName);
 		validateImageFileExists(fileName);
 		imageLoop.add(new Image(fileName));
 		displayImageContext();
@@ -289,8 +295,28 @@ public class ImageLoopEditor {
 	}
 		
 	// c searchStr
-	private static void optionSearchImageTitle(String searchStr) {
+	private static void optionSearchImageTitle(String searchStr)
+			throws EmptyLoopException {
+		validateImageLoopNotEmpty();
+		if (searchStr.length() == 0) { return; } // Nothing to search for
 		searchStr = removeStringQuotes(searchStr);
+		
+		int imageJumpCount = 0;
+		boolean imageFound = false;
+		imageLoop.next(); // Advance one so we don't stick on current image
+		Iterator<Image> imageIter = imageLoop.iterator();
+		while(imageIter.hasNext() && !imageFound) {
+			Image testImage = imageIter.next();
+			if (testImage.getTitle().contains(searchStr)) { imageFound = true; }
+			else { imageJumpCount++; }
+		}
+		if (imageFound) { 
+			optionJumpForward(imageJumpCount);
+		}
+		else { 
+			imageLoop.previous();
+			System.out.println("not found");
+		}
 		return;
 	}
 	
@@ -299,6 +325,7 @@ public class ImageLoopEditor {
 			throws EmptyLoopException {
 		validatePositiveInt(time);
 		imageLoop.getCurrent().setDuration(time);
+		displayImageContext();
 		return;
 	}
 	
@@ -307,30 +334,36 @@ public class ImageLoopEditor {
 			throws EmptyLoopException {
 		newTitle = removeStringQuotes(newTitle);
 		imageLoop.getCurrent().setTitle(newTitle);
+		displayImageContext();
 		return;
 	}
 	
-	private static void displayImageContext() throws EmptyLoopException {
+	private static void displayImageContext() {
 		int loopSize = imageLoop.size();
 		
-		// Print previous image
-		if (loopSize > 2) {
-			imageLoop.previous();
-			System.out.println("    " + generateImageString(
-					imageLoop.getCurrent()));
-			imageLoop.next();
+		try {
+			// Print previous image
+			if (loopSize > 2) {
+				imageLoop.previous();
+				System.out.println("    " + generateImageString(
+						imageLoop.getCurrent()));
+				imageLoop.next();
+			}
+			
+			// Print current image
+			System.out.println("--> " + generateImageString(
+					imageLoop.getCurrent()) + " <--");
+			
+			// Print next image
+			if (loopSize > 1) {
+				imageLoop.next();
+				System.out.println("    " + generateImageString(
+						imageLoop.getCurrent()));
+				imageLoop.previous();
+			}
 		}
-		
-		// Print current image
-		System.out.println("--> " + generateImageString(
-				imageLoop.getCurrent()) + " <--");
-		
-		// Print next image
-		if (loopSize > 1) {
-			imageLoop.next();
-			System.out.println("    " + generateImageString(
-					imageLoop.getCurrent()));
-		}
+		// If there are no nodes, just don't display anything
+		catch (EmptyLoopException e) {}
 		return;
 	}
 	
@@ -346,9 +379,10 @@ public class ImageLoopEditor {
 	
 	private static String removeStringQuotes(String argument) {
 		String returnString = argument;
-		if (argument.startsWith("\"") &&
+		if (argument.length() > 1 &&
+			argument.startsWith("\"") &&
 			argument.endsWith("\"")) {
-			returnString = argument.substring(1, argument.length() - 2);
+			returnString = argument.substring(1, argument.length() - 1);
 		}
 		return returnString;
 	}
@@ -359,12 +393,15 @@ public class ImageLoopEditor {
 	 * 	a-z, A-Z, 0-9, _, ., /, -
 	 * 	The entire string must only use those characters ( ^[regex]$ )
 	 *  Need to have one or more of the characters ( +$ )
+	 *  Java uses \ as an escape character, so need \\
+	 *  Regex also uses \ as an escape character, so actually need \\\\
 	 */
-	private static void validateFilename(String fileName) {
-		if (!fileName.matches("^[a-zA-Z0-9_./-]+$")) {
+	private static String validateFilename(String fileName) {
+		if (!fileName.matches("^[a-zA-Z0-9_./\\\\-]+$")) {
 			throw new IllegalArgumentException();
 		}
-		return;
+		// Sanitize the file name to remove escape characters
+		return fileName.replaceAll("\\\\", "\\\\");
 	}
 
 	private static void validatePositiveInt(int numToCheck) {
