@@ -88,5 +88,4 @@ public class LinkedLoop<E> implements LoopADT<E> {
 	
 	@Override
 	public int size() { return numNodes; }
-	
 }
