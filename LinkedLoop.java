@@ -8,9 +8,13 @@ import java.util.Iterator;
 // Author:           Alex McClain, gamcclain@wisc.edu
 // CS Login:         gamcclain@wisc.edu
 // Lecturer's Name:  Charles Fischer
-// Lab Section:      LAB ###
 ///////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Implements the loop data structure using doubly-linked list nodes.
+ * @author Alex McClain
+ * @param <E> Object type to be stored in the loop.
+ */
 public class LinkedLoop<E> implements LoopADT<E> {
 	
 	private DblListnode<E> currentNode;

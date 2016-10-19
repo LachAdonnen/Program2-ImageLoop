@@ -1,0 +1,62 @@
+Enter command (? for help)> l inlist.txt
+Enter command (? for help)> d
+Big ears [pets1.jpg, 15]
+Don't bite! [pets2.jpg, 8]
+Mom & kids [pets3.jpg, 15]
+[pets4.jpg, 15]
+pals [pets5.jpg, 20]
+He's mine! [pets6.jpg, 10]
+Enter command (? for help)> f
+    Big ears [pets1.jpg, 15]
+--> Don't bite! [pets2.jpg, 8] <--
+    Mom & kids [pets3.jpg, 15]
+Enter command (? for help)> j -2
+    pals [pets5.jpg, 20]
+--> He's mine! [pets6.jpg, 10] <--
+    Big ears [pets1.jpg, 15]
+Enter command (? for help)> j x
+invalid command
+Enter command (? for help)> d
+He's mine! [pets6.jpg, 10]
+Big ears [pets1.jpg, 15]
+Don't bite! [pets2.jpg, 8]
+Mom & kids [pets3.jpg, 15]
+[pets4.jpg, 15]
+pals [pets5.jpg, 20]
+Enter command (? for help)> j 4
+    Mom & kids [pets3.jpg, 15]
+--> [pets4.jpg, 15] <--
+    pals [pets5.jpg, 20]
+Enter command (? for help)> r
+    Mom & kids [pets3.jpg, 15]
+--> pals [pets5.jpg, 20] <--
+    He's mine! [pets6.jpg, 10]
+Enter command (? for help)> j 2
+    He's mine! [pets6.jpg, 10]
+--> Big ears [pets1.jpg, 15] <--
+    Don't bite! [pets2.jpg, 8]
+Enter command (? for help)> e "All ears"
+    He's mine! [pets6.jpg, 10]
+--> All ears [pets1.jpg, 15] <--
+    Don't bite! [pets2.jpg, 8]
+Enter command (? for help)> a seth.jpg
+    All ears [pets1.jpg, 15]
+--> [seth.jpg, 5] <--
+    Don't bite! [pets2.jpg, 8]
+Enter command (? for help)> e "Seth & me"
+    All ears [pets1.jpg, 15]
+--> Seth & me [seth.jpg, 5] <--
+    Don't bite! [pets2.jpg, 8]
+Enter command (? for help)> u 20
+    All ears [pets1.jpg, 15]
+--> Seth & me [seth.jpg, 20] <--
+    Don't bite! [pets2.jpg, 8]
+Enter command (? for help)> d
+Seth & me [seth.jpg, 20]
+Don't bite! [pets2.jpg, 8]
+Mom & kids [pets3.jpg, 15]
+pals [pets5.jpg, 20]
+He's mine! [pets6.jpg, 10]
+All ears [pets1.jpg, 15]
+Enter command (? for help)> x
+exit

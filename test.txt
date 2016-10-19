@@ -1,0 +1,15 @@
+l inlist.txt
+d
+f
+j -2
+j x
+d
+j 4
+r
+j 2
+e "All ears"
+a seth.jpg
+e "Seth & me"
+u 20
+d
+x
